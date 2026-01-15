@@ -1,0 +1,17 @@
+# Python virtual environment
+venv/
+__pycache__/
+
+# Credentials and tokens
+credentials/
+token_sheets.pickle
+token_gmail.pickle
+state.json
+
+# OAuth credentials JSON
+credentials.json
+client_secret.json
+
+# IDE files
+.vscode/
+.idea/
