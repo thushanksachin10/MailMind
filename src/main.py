@@ -5,7 +5,10 @@ from src.sheets_service import get_sheets_service, append_to_sheet
 
 from googleapiclient.errors import HttpError
 
-SHEET_ID = "YOUR_GOOGLE_SHEET_ID"
+from config import SHEET_ID, SHEET_RANGE
+
+print("DEBUG SHEET_ID =", SHEET_ID)
+print("DEBUG SHEET_RANGE =", SHEET_RANGE)
 
 def load_state():
     try:
@@ -21,11 +24,12 @@ def save_state(state):
 def main():
     gmail = get_gmail_service()
     sheets = get_sheets_service()
+    print("OAuth complete, starting email processing...")
 
     state = load_state()
-
+    print("Fetching unread emails...")
     emails = fetch_unread_emails(gmail)
-
+    print("Fetched:", emails)
     if not emails:
         print("No new unread emails.")
         return
@@ -37,8 +41,14 @@ def main():
             continue  # skip duplicates
 
         try:
+            print("Parsing:", msg_id)
             sender, subject, date, body = parse_email(gmail, msg_id)
-            append_to_sheet(sheets, SHEET_ID, [sender, subject, date, body])
+            print("Parsed email:", sender, subject)
+            if len(body) > 49000:
+                print("Body too long, truncating...")
+                body = body[:49000] + " ... [TRUNCATED]"
+
+            append_to_sheet(sheets, SHEET_ID, SHEET_RANGE, [sender, subject, date, body])
 
             # Mark email as read
             gmail.users().messages().modify(
