@@ -253,13 +253,40 @@ Gmail unread before & after
 
 Google Sheet with appended rows
 
-Recording includes:
+OAuth consent screen screenshot
 
-Full execution demo
+Script output screenshot
 
-OAuth approval
+▶️ Demo Video Requirements
 
-Parsing + Sheet updates
+A 2–3 min video must show:
+
+Project folder structure
+
+Running the script
+
+OAuth authentication
+
+Email parsing logs
+
+Rows added in Google Sheet
+
+Second run showing no duplicates
+
+🚀 Bonus Features Implemented
+
+✔ Body truncation for large emails
+✔ HTML → plain text conversion
+✔ OAuth token caching
+✔ Detailed console logging
+
+⚠ Limitations
+
+🔸 Cannot process emails exceeding 50k characters (Google Sheets limit)
+🔸 Gmail API quota limits apply
+🔸 Requires first-time OAuth login manually
+🔸 Some HTML emails may strip formatting
+
 📌 Future Enhancements
 
 Add filtering by subject keywords
