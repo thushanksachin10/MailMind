@@ -1,307 +1,208 @@
-# gmail_to_sheets
+# 📧 Gmail → Google Sheets Automation
 
-📧 Gmail → Google Sheets Automation
+A Python automation pipeline that fetches unread Gmail messages, parses structured data, and appends rows to Google Sheets — using OAuth 2.0 for secure, token-cached authentication.
 
-A Python-based automation script that fetches unread Gmail messages, extracts structured data, and appends it to Google Sheets using OAuth authentication for both Gmail and Sheets APIs.
+---
 
-🧩 Architecture Overview
+## 🧩 Architecture
 
-Below is a simple architecture diagram (hand-drawn style):
+```
++----------------------------+
+|        Gmail Inbox         |
++-------------+--------------+
+              |
+              | Fetch unread emails (Gmail API)
+              v
+  +------------------------+
+  |   gmail_service.py     |
+  +------------------------+
+              |
+              | Parse metadata + body
+              v
+  +------------------------+
+  |   email_parser.py      |
+  +------------------------+
+              |
+              | Append row (Sheets API)
+              v
+  +------------------------+
+  |  sheets_service.py     |
+  +------------------------+
+              |
+              v
++-----------------------------+
+|     Google Sheets Output    |
++-----------------------------+
+              |
+              | Persist last processed ID
+              v
++-----------------------------+
+|         state.json          |
++-----------------------------+
+```
 
-                +----------------------------+
-                |        Gmail Inbox        |
-                +-------------+--------------+
-                              |
-                              | Fetch unread emails (Gmail API)
-                              v
-                  +------------------------+
-                  |   gmail_service.py     |
-                  +------------------------+
-                              |
-                              | Parse metadata + body
-                              v
-                  +------------------------+
-                  |   email_parser.py      |
-                  +------------------------+
-                              |
-                              | Append row to sheet (Sheets API)
-                              v
-                  +------------------------+
-                  |  sheets_service.py     |
-                  +------------------------+
-                              |
-                              v
-                +-----------------------------+
-                |     Google Sheets Output    |
-                +-----------------------------+
-                              |
-                              | Save last processed email ID
-                              v
-                +-----------------------------+
-                |        state.json           |
-                +-----------------------------+
+---
 
-🔧 Step-by-Step Setup Instructions
+## ⚙️ Setup
 
-Follow exactly in this order:
+### 1. Clone the repo
+```bash
+git clone https://github.com/thushanksachin10/gmail_to_sheets.git
+cd gmail_to_sheets
+```
 
-1️⃣ Clone the repository
-git clone https://github.com/your-username/gmail-to-sheets.git
-cd gmail-to-sheets
-
-2️⃣ Create a virtual environment
+### 2. Create a virtual environment
+```bash
 python -m venv venv
-venv\Scripts\activate   # Windows
+venv\Scripts\activate     # Windows
+source venv/bin/activate  # macOS/Linux
+```
 
-3️⃣ Install dependencies
+### 3. Install dependencies
+```bash
 pip install -r requirements.txt
+```
 
-4️⃣ Enable APIs in Google Cloud Console
+### 4. Enable APIs in Google Cloud Console
+Go to [console.cloud.google.com](https://console.cloud.google.com/) and enable:
+- Gmail API
+- Google Sheets API
 
-Go to:
+### 5. Configure OAuth consent screen
+- User type: **External**
+- Add scopes: `gmail.modify` and `spreadsheets`
+- Add your Gmail as a **Test User**
 
-https://console.cloud.google.com/
+### 6. Download credentials
+- Go to **APIs & Services → Credentials → OAuth 2.0 Client IDs**
+- Download and save as `credentials/credentials.json`
+- ⚠️ This file is in `.gitignore` — never commit it
 
-
-Enable:
-
-✔ Gmail API
-✔ Google Sheets API
-
-5️⃣ Configure OAuth consent screen
-
-User type: External
-
-App name: Gmail to Sheets Automation
-
-Add scopes:
-
-https://www.googleapis.com/auth/gmail.modify
-
-https://www.googleapis.com/auth/spreadsheets
-
-Add your Gmail under Test Users
-
-6️⃣ Download OAuth client credentials
-
-Download from:
-
-APIs & Services > Credentials > OAuth 2.0 Client IDs
-
-
-Place file as:
-
-credentials/credentials.json
-
-
-⚠️ DO NOT commit this file.
-
-7️⃣ Add your Google Sheet ID
-
+### 7. Set your Sheet ID
 Open your sheet URL:
-
+```
 https://docs.google.com/spreadsheets/d/<SHEET_ID>/edit
-
-
-Copy <SHEET_ID> and update config.py:
-
+```
+Copy `<SHEET_ID>` and update `config.py`:
+```python
 SHEET_ID = "your_sheet_id_here"
 SHEET_RANGE = "Sheet1!A:D"
+```
 
-8️⃣ Run the script
+### 8. Run
+```bash
 python -m src.main
+```
+A browser window will open for Gmail OAuth, then again for Sheets OAuth. After authorizing once, tokens are cached automatically.
 
+---
 
-It will open a browser twice:
+## 🔐 OAuth Flow
 
-once for Gmail OAuth
+This project uses the **OAuth 2.0 installed application flow** — the Google-recommended approach for local scripts.
 
-once for Sheets OAuth
+1. Script starts a local server via `flow.run_local_server()`
+2. Google presents a consent screen
+3. User grants permissions once
+4. Script receives an authorization code, exchanges it for an access token + refresh token
+5. Tokens are cached — no re-login on subsequent runs
 
-After authorization, script will start processing automatically.
+---
 
-🔐 OAuth Flow Explained
+## 🔁 Duplicate Prevention
 
-This project uses OAuth 2.0 installed application flow.
+Each email has a unique `msg_id`. After processing, the script persists it to `state.json`:
 
-How it works:
+```json
+{ "last_processed_id": "19b2b5e0d8ffb912" }
+```
 
-The script launches a local server using:
+On the next run, any email matching the saved ID is skipped. This approach requires no database and works completely offline.
 
-flow.run_local_server()
+---
 
+## 🧠 Edge Cases Handled
 
-Google shows a consent screen.
+**Problem:** Google Sheets rejects cell values over 50,000 characters. Marketing emails with large HTML bodies triggered this error.
 
-User grants permissions.
-
-The script receives an authorization code.
-
-This code is exchanged for:
-
-access token
-
-refresh token
-
-Why this method is used?
-
-✔ Safe
-✔ Google-recommended for local apps
-✔ Refresh token avoids repeated logins
-✔ Works without exposing password
-
-🔁 Duplicate Prevention Logic
-
-The script prevents reprocessing the same email using this flow:
-
-Every fetched email has a unique msg_id.
-
-After processing, the script stores:
-
-{ "last_processed_id": "<msg_id>" }
-
-
-in state.json.
-
-When running again, script compares each fetched email ID with saved ID:
-
-if msg_id == state["last_processed_id"]:
-    continue
-
-
-As soon as it finds the previously processed message → the loop skips it.
-
-💾 State Persistence Method
-File used:
-state.json
-
-What it stores:
-{
-  "last_processed_id": "19b2b5e0d8ffb912"
-}
-
-Why this approach?
-
-✔ Very simple
-✔ Persistent between runs
-✔ No database required
-✔ Works offline
-
-🧠 Challenge Faced & How I Solved It
-Challenge:
-
-Google Sheets API returned:
-
-Your input contains more than the maximum of 50000 characters in a single cell.
-
-
-Some marketing emails contain huge HTML bodies which exceed Google’s row limit.
-
-Solution implemented:
-
-I added truncation logic in email_parser.py:
-
+**Solution:** Truncation logic in `email_parser.py`:
+```python
 if len(body) > 50000:
     body = body[:50000] + " ...[TRUNCATED]"
+```
 
+The pipeline never crashes — metadata is always preserved even when body content is trimmed.
 
-This ensures:
+---
 
-✔ Script never crashes
-✔ All essential metadata still gets saved
-✔ No API errors from Sheets
+## 🚀 Automated Scheduling (GitHub Actions)
 
-⚠️ Limitations of the Current Solution
-❌ 1. Not production-ready authentication
+The script can run automatically on a schedule using GitHub Actions. Add this file to your repo:
 
-Uses OAuth installed-app flow, not service accounts.
-User must manually authorize once.
+`.github/workflows/run.yml`
 
-❌ 2. State tracking is minimal
+```yaml
+name: Gmail to Sheets Sync
 
-Only stores last processed email ID instead of full history.
+on:
+  schedule:
+    - cron: '0 * * * *'   # runs every hour
+  workflow_dispatch:        # also allows manual trigger
 
-❌ 3. Cannot handle extremely complex email bodies
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-HTML-heavy emails are only partially processed.
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-❌ 4. Script processes only unread emails
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-If email is already read, it will never be processed.
+      - name: Run sync
+        env:
+          GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
+          SHEETS_TOKEN: ${{ secrets.SHEETS_TOKEN }}
+        run: python -m src.main
+```
 
-❌ 5. No scheduling / automation built-in
+> Store your OAuth tokens as GitHub Secrets to avoid re-authorization in CI.
 
-User must run the script manually.
-(But can be automated using cron / Task Scheduler.)
+---
 
-📎 Attachments Included
+## ⚠️ Known Limitations
 
-This repository includes a folder:
+| Limitation | Detail |
+|---|---|
+| OAuth flow | Uses installed-app flow, not a service account. One-time manual auth required. |
+| State tracking | Only the last processed email ID is persisted — not a full history. |
+| Unread-only | Emails already marked as read before the script runs will be skipped. |
+| HTML emails | Bodies exceeding 50k chars are truncated. Complex HTML may lose some formatting. |
 
-proof/
-  ├── screenshots/
-  └── recording/
+---
 
+## 📌 Potential Improvements
 
-Screenshots include:
+- Filter emails by subject keyword or sender domain
+- Extract and log Gmail labels
+- Skip `no-reply` addresses automatically
+- Process only emails from the last N hours
+- Add retry logic for network failures
+- Dockerize for portable deployment
 
-OAuth flow
+---
 
-Terminal output logs
+## 🛠️ Tech Stack
 
-Gmail unread before & after
+`Python` · `Gmail API` · `Google Sheets API` · `OAuth 2.0` · `GitHub Actions`
 
-Google Sheet with appended rows
+---
 
-OAuth consent screen screenshot
+## 👨‍💻 Author
 
-Script output screenshot
-
-▶️ Demo Video Requirements
-
-A 2–3 min video must show:
-
-Project folder structure
-
-Running the script
-
-OAuth authentication
-
-Email parsing logs
-
-Rows added in Google Sheet
-
-Second run showing no duplicates
-
-🚀 Bonus Features Implemented
-
-✔ Body truncation for large emails
-✔ HTML → plain text conversion
-✔ OAuth token caching
-✔ Detailed console logging
-
-⚠ Limitations
-
-🔸 Cannot process emails exceeding 50k characters (Google Sheets limit)
-🔸 Gmail API quota limits apply
-🔸 Requires first-time OAuth login manually
-🔸 Some HTML emails may strip formatting
-
-📌 Future Enhancements
-
-Add filtering by subject keywords
-
-Add label extraction
-
-Exclude “no-reply” emails
-
-Process emails only within last 24 hours
-
-Add Docker support
-
-Add retry logic for unstable networks
-
-
-👨‍💻 Author
-Thushank Sachin Bagal
-Full Stack Developer (Python | MERN | Cloud)
+**Thushank Sachin Bagal**  
+[LinkedIn](https://linkedin.com/in/thushankbagal) · [GitHub](https://github.com/thushanksachin10)
