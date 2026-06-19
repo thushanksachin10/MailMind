@@ -1,0 +1,31 @@
+name: Gmail to Sheets Sync
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore Gmail token
+        run: |
+          echo "${{ secrets.GMAIL_TOKEN }}" | base64 --decode > token_gmail.pickle
+
+      - name: Restore Sheets token
+        run: |
+          echo "${{ secrets.SHEETS_TOKEN }}" | base64 --decode > token_sheets.pickle
+
+      - name: Run sync
+        run: python -m src.main
