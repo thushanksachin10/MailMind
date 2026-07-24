@@ -27,5 +27,13 @@ jobs:
         run: |
           echo "${{ secrets.SHEETS_TOKEN }}" | base64 --decode > token_sheets.pickle
 
+      - name: Write config
+        run: |
+          echo "SHEET_ID = '${{ secrets.SHEET_ID }}'" > config.py
+          echo "SHEET_RANGE = 'Sheet1!A:H'" >> config.py
+          echo "OPENROUTER_API_KEY = '${{ secrets.OPENROUTER_API_KEY }}'" >> config.py
+          echo "TELEGRAM_BOT_TOKEN = '${{ secrets.TELEGRAM_BOT_TOKEN }}'" >> config.py
+          echo "TELEGRAM_CHAT_ID = '${{ secrets.TELEGRAM_CHAT_ID }}'" >> config.py
+
       - name: Run sync
         run: python -m src.main

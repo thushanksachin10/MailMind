@@ -1,0 +1,5 @@
+SHEET_ID = "your_google_sheet_id"
+SHEET_RANGE = "Sheet1!A:H"
+OPENROUTER_API_KEY = "your_openrouter_api_key"
+TELEGRAM_BOT_TOKEN = "your_telegram_bot_token"
+TELEGRAM_CHAT_ID = "your_telegram_chat_id"
