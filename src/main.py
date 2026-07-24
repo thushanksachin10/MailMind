@@ -2,6 +2,8 @@ import json
 from src.gmail_service import get_gmail_service, fetch_unread_emails
 from src.email_parser import parse_email
 from src.sheets_service import get_sheets_service, append_to_sheet
+from src.ai_classifier import classify_email
+from src.notifier import send_notification
 
 from googleapiclient.errors import HttpError
 
@@ -29,7 +31,6 @@ def main():
     state = load_state()
     print("Fetching unread emails...")
     emails = fetch_unread_emails(gmail)
-    print("Fetched:", emails)
     if not emails:
         print("No new unread emails.")
         return
@@ -38,19 +39,31 @@ def main():
         msg_id = email['id']
 
         if msg_id == state["last_processed_id"]:
-            continue  # skip duplicates
+            continue
 
         try:
             print("Parsing:", msg_id)
             sender, subject, date, body = parse_email(gmail, msg_id)
             print("Parsed email:", sender, subject)
+
             if len(body) > 49000:
                 print("Body too long, truncating...")
                 body = body[:49000] + " ... [TRUNCATED]"
 
-            append_to_sheet(sheets, SHEET_ID, SHEET_RANGE, [sender, subject, date, body])
+            classification = classify_email(subject, sender, body)
+            category = classification.get("category", "Other")
+            summary = classification.get("summary", "")
+            priority = classification.get("priority", "low").upper()
+            confidence = classification.get("confidence", 0.0)
 
-            # Mark email as read
+            print(f"Classified as: {category} | {priority} | confidence: {confidence}")
+
+            append_to_sheet(sheets, SHEET_ID, SHEET_RANGE, 
+                [sender, subject, date, body, category, summary, priority, confidence])
+
+            if priority.upper() == "HIGH":
+                send_notification(subject, sender, summary, priority, msg_id)
+
             gmail.users().messages().modify(
                 userId='me',
                 id=msg_id,
