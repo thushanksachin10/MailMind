@@ -322,5 +322,5 @@ Motivated directly by observed failure modes:
 ## Author
 
 **Thushank Sachin Bagal**
-Final Year B.Tech Computer Science, Ajeenkya DY Patil University
+
 [LinkedIn](https://linkedin.com/in/thushankbagal) · [GitHub](https://github.com/thushanksachin10)
