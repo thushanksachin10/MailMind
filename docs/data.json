@@ -1,28 +1,28 @@
 {
-  "total": 201,
-  "avg_confidence": 0.75,
+  "total": 221,
+  "avg_confidence": 0.76,
   "categories": {
-    "Application": 113,
-    "Finance": 13,
-    "Other": 26,
-    "Spam": 22,
-    "Networking": 11,
-    "Rejection": 1,
+    "Application": 122,
+    "Finance": 16,
+    "Other": 28,
+    "Spam": 26,
+    "Networking": 12,
+    "Rejection": 2,
     "Interview": 6,
     "Offer": 4,
     "Assessment": 5
   },
   "priorities": {
-    "LOW": 104,
-    "MEDIUM": 83,
+    "LOW": 119,
+    "MEDIUM": 88,
     "HIGH": 14
   },
   "confidence_distribution": {
     "0.0-0.3": 17,
     "0.3-0.5": 0,
-    "0.5-0.7": 0,
-    "0.7-0.9": 152,
-    "0.9-1.0": 32
+    "0.5-0.7": 1,
+    "0.7-0.9": 164,
+    "0.9-1.0": 39
   },
-  "last_updated": "2026-07-25 01:59 IST"
+  "last_updated": "2026-07-25 05:17 IST"
 }
