@@ -4,7 +4,7 @@
 
 A fully automated pipeline that ingests unread Gmail messages, applies an LLM layer for structured information extraction and intent classification, persists results to Google Sheets, and delivers real-time priority notifications via Telegram — running hourly on GitHub Actions with zero human intervention.
 
-📊 **[Live Research Dashboard](https://thushanksachin10.github.io/gmail_to_sheets)** — real-time pipeline metrics, category breakdown, and confidence distribution.
+📊 **[Live Research Dashboard](https://thushanksachin10.github.io/MailMind)** — real-time pipeline metrics, category breakdown, and confidence distribution.
 
 ---
 
