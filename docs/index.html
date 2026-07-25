@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Email Intelligence Pipeline</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --border: #1e1e2e;
+      --accent: #7c6af7;
+      --accent2: #4ade80;
+      --accent3: #f97316;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --high: #ef4444;
+      --medium: #f97316;
+      --low: #4ade80;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 2rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .hero {
+      padding: 4rem 3rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 300;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      max-width: 700px;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 550px;
+      line-height: 1.7;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-card {
+      padding: 2.5rem 3rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat-card:last-child { border-right: none; }
+
+    .stat-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .stat-value {
+      font-size: 2.8rem;
+      font-weight: 600;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.green { color: var(--accent2); }
+    .stat-value.orange { color: var(--accent3); }
+
+    .stat-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chart-panel {
+      padding: 2.5rem 3rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .chart-panel:last-child { border-right: none; }
+    .chart-panel:nth-child(3) { border-top: 1px solid var(--border); }
+    .chart-panel:nth-child(4) { border-top: 1px solid var(--border); }
+
+    .chart-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 260px;
+    }
+
+    .priority-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    .priority-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .priority-name {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      width: 70px;
+      color: var(--muted);
+    }
+
+    .priority-bar-wrap {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .priority-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease;
+    }
+
+    .priority-bar.high { background: var(--high); }
+    .priority-bar.medium { background: var(--medium); }
+    .priority-bar.low { background: var(--low); }
+
+    .priority-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text);
+      width: 30px;
+      text-align: right;
+    }
+
+    footer {
+      padding: 2rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--muted);
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+    }
+
+    @media (max-width: 768px) {
+      header, .hero, .stat-card, .chart-panel, footer {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+      }
+      .charts-grid { grid-template-columns: 1fr; }
+      .chart-panel:nth-child(3) { border-top: 1px solid var(--border); }
+      .chart-panel { border-right: none; border-top: 1px solid var(--border); }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="loading" id="loading">loading pipeline data...</div>
+
+<div id="app" style="display:none">
+  <header>
+    <div class="logo">Gmail Intelligence Pipeline</div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      <span id="last-updated">—</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-label">Research Dashboard</div>
+    <h1>LLM-powered <span>email triage</span><br>for job seekers</h1>
+    <p>An automated pipeline that classifies inbound Gmail using a large language model, extracts structured CRM data, and routes high-priority emails via Telegram — running hourly on GitHub Actions.</p>
+  </section>
+
+  <section class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Emails Processed</div>
+      <div class="stat-value accent" id="total">—</div>
+      <div class="stat-sub">total pipeline runs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Confidence</div>
+      <div class="stat-value green" id="confidence">—</div>
+      <div class="stat-sub">model certainty score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">High Priority</div>
+      <div class="stat-value orange" id="high-count">—</div>
+      <div class="stat-sub">instant notifications sent</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Categories</div>
+      <div class="stat-value" id="cat-count">—</div>
+      <div class="stat-sub">unique email types</div>
+    </div>
+  </section>
+
+  <section class="charts-grid">
+    <div class="chart-panel">
+      <div class="chart-title">Category Breakdown</div>
+      <div class="chart-wrap">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <div class="chart-title">Confidence Distribution</div>
+      <div class="chart-wrap">
+        <canvas id="confidenceChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <div class="chart-title">Priority Distribution</div>
+      <div class="priority-bars" id="priority-bars"></div>
+    </div>
+
+    <div class="chart-panel">
+      <div class="chart-title">Model Notes</div>
+      <div style="color: var(--muted); font-size: 0.85rem; line-height: 1.8; margin-top: 1rem;">
+        <p style="margin-bottom:1rem">Model: <span style="color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.75rem">meta-llama/llama-3.1-8b-instruct</span></p>
+        <p style="margin-bottom:1rem">Temperature: <span style="color:var(--accent); font-family:'IBM Plex Mono',monospace">0.2</span> — low for consistent structured output</p>
+        <p style="margin-bottom:1rem">Input: subject + sender domain + cleaned body preview + extracted links</p>
+        <p style="margin-bottom:1rem">Output: category, summary, priority, confidence score</p>
+        <p>Notifications: Telegram bot fires on HIGH priority with direct Gmail deep link</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Built by <a href="https://linkedin.com/in/thushankbagal" target="_blank">Thushank Sachin Bagal</a></span>
+    <a href="https://github.com/thushanksachin10/gmail_to_sheets" target="_blank">View on GitHub →</a>
+  </footer>
+</div>
+
+<script>
+  const COLORS = ['#7c6af7','#4ade80','#f97316','#38bdf8','#f472b6','#a78bfa','#fb923c','#34d399','#e879f9'];
+
+  async function init() {
+    const res = await fetch('data.json');
+    const d = await res.json();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+
+    document.getElementById('total').textContent = d.total.toLocaleString();
+    document.getElementById('confidence').textContent = d.avg_confidence;
+    document.getElementById('last-updated').textContent = 'Updated ' + d.last_updated;
+    document.getElementById('cat-count').textContent = Object.keys(d.categories).length;
+
+    const priorities = d.priorities;
+    const total = Object.values(priorities).reduce((a, b) => a + b, 0);
+    const high = (priorities['HIGH'] || 0);
+    document.getElementById('high-count').textContent = high;
+
+    // Category chart
+    const catLabels = Object.keys(d.categories);
+    const catValues = Object.values(d.categories);
+    new Chart(document.getElementById('categoryChart'), {
+      type: 'doughnut',
+      data: {
+        labels: catLabels,
+        datasets: [{ data: catValues, backgroundColor: COLORS, borderWidth: 0, hoverOffset: 6 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { color: '#64748b', font: { family: 'IBM Plex Mono', size: 10 }, padding: 12, boxWidth: 10 }
+          }
+        }
+      }
+    });
+
+    // Confidence distribution
+    const bucketLabels = Object.keys(d.confidence_distribution);
+    const bucketValues = Object.values(d.confidence_distribution);
+    new Chart(document.getElementById('confidenceChart'), {
+      type: 'bar',
+      data: {
+        labels: bucketLabels,
+        datasets: [{
+          data: bucketValues,
+          backgroundColor: '#7c6af7',
+          borderRadius: 4,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#64748b', font: { family: 'IBM Plex Mono', size: 10 } }, grid: { color: '#1e1e2e' } },
+          y: { ticks: { color: '#64748b', font: { family: 'IBM Plex Mono', size: 10 } }, grid: { color: '#1e1e2e' } }
+        }
+      }
+    });
+
+    // Priority bars
+    const priorityOrder = ['HIGH', 'MEDIUM', 'LOW'];
+    const priorityClass = { HIGH: 'high', MEDIUM: 'medium', LOW: 'low' };
+    const container = document.getElementById('priority-bars');
+    const maxVal = Math.max(...priorityOrder.map(p => priorities[p] || 0));
+
+    priorityOrder.forEach(p => {
+      const count = priorities[p] || 0;
+      const pct = maxVal > 0 ? (count / maxVal * 100) : 0;
+      container.innerHTML += `
+        <div class="priority-row">
+          <div class="priority-name">${p}</div>
+          <div class="priority-bar-wrap">
+            <div class="priority-bar ${priorityClass[p]}" style="width:${pct}%"></div>
+          </div>
+          <div class="priority-count">${count}</div>
+        </div>`;
+    });
+  }
+
+  init().catch(e => {
+    document.getElementById('loading').textContent = 'Failed to load data.';
+    console.error(e);
+  });
+</script>
+</body>
+</html>

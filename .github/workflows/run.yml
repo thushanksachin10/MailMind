@@ -5,27 +5,30 @@ on:
     - cron: '0 * * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Restore Gmail token
-        run: |
-          echo "${{ secrets.GMAIL_TOKEN }}" | base64 --decode > token_gmail.pickle
+        run: echo "${{ secrets.GMAIL_TOKEN }}" | base64 --decode > token_gmail.pickle
 
       - name: Restore Sheets token
-        run: |
-          echo "${{ secrets.SHEETS_TOKEN }}" | base64 --decode > token_sheets.pickle
+        run: echo "${{ secrets.SHEETS_TOKEN }}" | base64 --decode > token_sheets.pickle
 
       - name: Write config
         run: |
@@ -35,5 +38,39 @@ jobs:
           echo "TELEGRAM_BOT_TOKEN = '${{ secrets.TELEGRAM_BOT_TOKEN }}'" >> config.py
           echo "TELEGRAM_CHAT_ID = '${{ secrets.TELEGRAM_CHAT_ID }}'" >> config.py
 
-      - name: Run sync
+      - name: Run email sync
         run: python -m src.main
+
+      - name: Generate dashboard data
+        run: python -m src.generate_dashboard
+
+      - name: Commit dashboard data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data.json
+          git diff --staged --quiet || git commit -m "Update dashboard data [skip ci]"
+          git push
+
+  deploy:
+    needs: sync
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
