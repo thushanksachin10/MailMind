@@ -4,6 +4,7 @@ from google.auth.transport.requests import Request
 from config import SHEET_ID, SHEET_RANGE
 import os
 import pickle
+import time
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
@@ -36,12 +37,19 @@ def append_to_sheet(service, sheet_id, sheet_range, row_data):
     sheet = service.spreadsheets()
     body = {"values": [row_data]}
 
-    result = sheet.values().append(
-        spreadsheetId=sheet_id,
-        range=sheet_range,
-        valueInputOption="RAW",
-        insertDataOption="INSERT_ROWS",
-        body=body
-    ).execute()
-
-    return result
+    for attempt in range(3):
+        try:
+            sheet.values().append(
+                spreadsheetId=sheet_id,
+                range=sheet_range,
+                valueInputOption="RAW",
+                insertDataOption="INSERT_ROWS",
+                body=body
+            ).execute()
+            return
+        except Exception as e:
+            print(f"Sheets write attempt {attempt + 1} failed: {e}")
+            if attempt < 2:
+                time.sleep(5)
+            else:
+                raise
