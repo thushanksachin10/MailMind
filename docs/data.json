@@ -1,11 +1,11 @@
 {
-  "total": 5494,
+  "total": 5514,
   "avg_confidence": 0.78,
   "categories": {
-    "Application": 1099,
+    "Application": 1100,
     "Finance": 382,
-    "Other": 1077,
-    "Spam": 2181,
+    "Other": 1082,
+    "Spam": 2195,
     "Networking": 641,
     "Rejection": 14,
     "Interview": 42,
@@ -14,16 +14,16 @@
     "Application - application received or under review": 2
   },
   "priorities": {
-    "LOW": 4348,
-    "MEDIUM": 1058,
+    "LOW": 4367,
+    "MEDIUM": 1059,
     "HIGH": 88
   },
   "confidence_distribution": {
-    "0.0-0.3": 374,
+    "0.0-0.3": 375,
     "0.3-0.5": 1,
     "0.5-0.7": 59,
-    "0.7-0.9": 3591,
-    "0.9-1.0": 1469
+    "0.7-0.9": 3606,
+    "0.9-1.0": 1473
   },
-  "last_updated": "2026-08-12 23:33 IST"
+  "last_updated": "2026-08-13 01:18 IST"
 }
